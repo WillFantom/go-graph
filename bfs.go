@@ -36,9 +36,9 @@ func (q *fifo[T]) empty() bool {
 	return false
 } 
 
-func (g Graph[T]) BFS(startNodeID string) ([]T, error) {
+func (g Graph[T]) BFS(startNodeID NodeID) ([]T, error) {
 	queue := newFIFO[T]()
-	visitedNodes := make(map[string]bool)
+	visitedNodes := make(map[NodeID]bool)
 	result := make([]T, 0)
 	g.lock.RLock()
 	defer g.lock.RUnlock()
@@ -75,7 +75,7 @@ func (g Graph[T]) Order() ([]T, error) {
 	if !g.directed {
 		return result, fmt.Errorf("undirected graph can not be ordered")
 	}
-	indegrees := make(map[string]int)
+	indegrees := make(map[NodeID]int)
 	queue := newFIFO[T]()
 	for id, n := range g.nodes {
 		indegrees[id] = len(n.reversedEdges)

@@ -4,8 +4,8 @@ import (
 	"fmt"
 )
 
-func (g Graph[T]) DFS(startNodeID string) ([]T, error) {
-	visitedNodes := make(map[string]bool)
+func (g Graph[T]) DFS(startNodeID NodeID) ([]T, error) {
+	visitedNodes := make(map[NodeID]bool)
 	result := make([]T, 0)
 	g.lock.RLock()
 	defer g.lock.RUnlock()
@@ -17,7 +17,7 @@ func (g Graph[T]) DFS(startNodeID string) ([]T, error) {
 	return result, nil
 }
 
-func (g Graph[T]) dfsRecursive(n *node[T], visited map[string]bool) []T {
+func (g Graph[T]) dfsRecursive(n *node[T], visited map[NodeID]bool) []T {
 	visited[n.id] = true
 	result := make([]T, 0)
 	result = append(result, n.Value)

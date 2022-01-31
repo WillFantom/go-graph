@@ -6,19 +6,21 @@ import (
 )
 
 type Graph[T any] struct {
-	nodes    map[string]*node[T]
+	nodes    map[NodeID]*node[T]
 
 	directed bool
 	idTicker int
 	lock     sync.RWMutex
 }
 
+type NodeID int
+
 type node[T any] struct {
 	Value T
 
-	id string
-	edges map[string]*edge[T]
-	reversedEdges map[string]*edge[T]
+	id NodeID
+	edges map[NodeID]*edge[T]
+	reversedEdges map[NodeID]*edge[T]
 }
 
 type edge[T any] struct {
@@ -28,7 +30,7 @@ type edge[T any] struct {
 
 func New[T any](directed bool) *Graph[T] {
 	return &Graph[T]{
-		nodes:    make(map[string]*node[T]),
+		nodes:    make(map[NodeID]*node[T]),
 
 		directed: directed,
 		idTicker: 0,
@@ -37,7 +39,7 @@ func New[T any](directed bool) *Graph[T] {
 }
 
 
-func (g *Graph[T]) Node(id string) (T, error) {
+func (g *Graph[T]) Node(id NodeID) (T, error) {
 	g.lock.RLock()
 	defer g.lock.RUnlock()
 	var value T
@@ -48,36 +50,36 @@ func (g *Graph[T]) Node(id string) (T, error) {
 	}
 }
 
-func (g *Graph[T]) NodeIDs() ([]string) {
+func (g *Graph[T]) NodeIDs() ([]NodeID) {
 	g.lock.RLock()
 	defer g.lock.RUnlock()
-	ids := make([]string, 0)
+	ids := make([]NodeID, 0)
 	for _, n := range g.nodes {
 		ids = append(ids, n.id)
 	}
 	return ids
 }
 
-func (g *Graph[T]) AddNode(nodeData T) string {
+func (g *Graph[T]) AddNode(nodeData T) NodeID {
 	g.lock.Lock()
-	id := string(g.idTicker)
+	id := NodeID(g.idTicker)
 	g.idTicker++
 	g.nodes[id] = &node[T]{
 		Value: nodeData,
 		id: id,
-		edges: make(map[string]*edge[T]),
-		reversedEdges: make(map[string]*edge[T]),
+		edges: make(map[NodeID]*edge[T]),
+		reversedEdges: make(map[NodeID]*edge[T]),
 	}
 	g.lock.Unlock()
 	return id
 }
 
-func (g *Graph[T]) RemoveNode(id string) error {
+func (g *Graph[T]) RemoveNode(id NodeID) error {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 	_, exists := g.nodes[id]
 	if !exists {
-		fmt.Errorf("node does not exist in graph: %s", id)
+		fmt.Errorf("node does not exist in graph: %v", id)
 	}
 	for _, endNode := range g.nodes {
 		delete(endNode.edges, id)
@@ -87,11 +89,11 @@ func (g *Graph[T]) RemoveNode(id string) error {
 	return nil
 }
 
-func (g *Graph[T]) AddEdge(startNodeID, endNodeID string) error {
+func (g *Graph[T]) AddEdge(startNodeID, endNodeID NodeID) error {
 	return g.AddWeightedEdge(startNodeID, endNodeID, 1)
 }
 
-func (g *Graph[T]) AddWeightedEdge(startNodeID, endNodeID string, weight int) error {
+func (g *Graph[T]) AddWeightedEdge(startNodeID, endNodeID NodeID, weight int) error {
 	if startNodeID == endNodeID {
 		return fmt.Errorf("edge can not have same start and end")
 	}
@@ -116,7 +118,7 @@ func (g *Graph[T]) AddWeightedEdge(startNodeID, endNodeID string, weight int) er
 	return nil
 }
 
-func (g *Graph[T]) RemoveEdge(startNodeID, endNodeID string) error {
+func (g *Graph[T]) RemoveEdge(startNodeID, endNodeID NodeID) error {
 	if startNodeID == endNodeID {
 		return fmt.Errorf("edge can not have same start and end")
 	}
